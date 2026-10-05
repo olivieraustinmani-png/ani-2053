@@ -1,0 +1,5 @@
+Ce que la coquille me donne : NkCanvasApp cree la fenetre, vide les evenements, mesure le temps et fait Clear, dessin puis Display. Je peux me concentrer sur le mouvement et le carre.
+
+Ce qu'elle me prend : elle choisit l'ordre et la facon dont la boucle principale fonctionne. Pour modifier cette boucle, je dois comprendre ce que NkCanvasApp fait a ma place.
+
+Quand je choisirais la main : je choisirais cette façon si je voulais décider moi-même à quel moment le programme lit les événements et dessine le carré.

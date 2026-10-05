@@ -1,0 +1,8 @@
+Ce que NkCanvasApp fait a ma place :
+NkCanvasApp s'occupe de la partie technique de l'application. Il cree la fenetre, lance la boucle principale, gere les evenements, efface l'ecran avec la couleur choisie, affiche l'image, puis ferme correctement le programme. Dans mon fichier, je donne seulement les informations importantes : le titre, la taille de la fenetre et la couleur du fond.
+
+Ce qui se passe si je configure dans OnInit :
+Si je change Config() dans OnInit, la fenetre sera creee avant l'appel de OnInit. Le programme peut continuer a marcher, mais les changements ne sont pas vraiment pris en compte pour la creation de la fenetre. C'est pour cela que je mets le titre, la largeur, la hauteur et la couleur dans le constructeur.
+
+Ce qui se passe sans NKMain.h :
+Sans NKMain.h, le code peut compiler, mais le programme ne se construit pas jusqu'au bout. Il manque le point d'entree attendu par l'application fenetree sous Windows. NKMain.h permet de faire le lien entre le demarrage normal de l'application et ma fonction nkmain.

@@ -1,0 +1,2 @@
+taille : 18, glyphes : 94, texture : 512 512, perdu : 98
+taille : 48, glyphes : 94, texture : 1024 1024, perdu : 96

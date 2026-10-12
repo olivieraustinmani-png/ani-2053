@@ -1,0 +1,3 @@
+fichier : C:/Users/Austin/Desktop/ani-2053/chapitre-05/exo10-l_erreur_claire/film.mp4, ouvert : oui, images : 10, sonde : MP4
+fichier : C:/Users/Austin/Desktop/ani-2053/chapitre-05/exo10-l_erreur_claire/coupe.mp4, ouvert : non, images : 0, sonde : MP4
+fichier : C:/Users/Austin/Desktop/ani-2053/chapitre-05/exo10-l_erreur_claire/faux.txt.mp4, ouvert : non, images : 0, sonde : INCONNU

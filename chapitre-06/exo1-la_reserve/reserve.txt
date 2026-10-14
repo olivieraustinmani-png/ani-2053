@@ -1,0 +1,24 @@
+Tache :
+ addition des mille premiers entiers dans une variable locale,
+ faite deux cents fois (tache courte), puis cent fois par tache (tache longue).
+Reserve : 0.74 1.46 2.01
+Fils : 38.21 39.72 51.34
+Ouvriers : 8
+Tache longue : 0.49 (reserve) / 51.02 (fils)
+Pourquoi :
+ Creer un fil coute cher : le systeme alloue sa pile (souvent 1 Mo), l'inscrit
+ dans le noyau, puis le planifie. Pour la tache courte, ce cout DOMINE
+ totalement le travail utile : deux cents fils prennent 38 a 51 ms alors que
+ deux cents taches d'environ 1 microseconde ne representent que 0,2 ms de
+ travail. La reserve, dont les huit ouvriers existent deja, fait le meme
+ travail en moins de 2 ms : un facteur 30 a 50.
+ Avec la tache cent fois plus longue, on s'attendait a voir l'ecart se
+ refermer, mais la mesure dit autre chose : la reserve reste a 0,5 ms et les
+ fils a 51 ms. La raison : la tache longue (100 000 additions, environ
+ 50 microsecondes) reste encore tres loin du cout d'un fil (environ
+ 200 microsecondes, et les creations se sequencent). La lecon de l'enonce se
+ verifie autrement : l'ecart se referme seulement quand le travail utile
+ DEPASSE le cout de creation - pour une tache de plusieurs millisecondes.
+ Plus de fils ne veut pas dire plus vite : la reserve le prouve.
+ Mesures en Release, trois essais par version, dont le premier paie des
+ chargements et ne fait pas foi seul.

@@ -1,0 +1,40 @@
+Dix totaux :
+ 2387782
+ 2810722
+ 2696256
+ 2382966
+ 2498994
+ 2887009
+ 2729131
+ 1969128
+ 2492041
+ 2023134
+ Total attendu : 8000000. Dix lancements, dix totaux differents, tous entre
+ un quart et un tiers de la vraie valeur : le total juste une fois ne prouve
+ rien, dix lancements faux dix fois differemment prouvent la course.
+Un seul fil :
+ 1000000 1000000 : exact. Sans concurrent, pas de course : le meme code,
+ le meme compteur, un seul fil, et l'increment devient fiable.
+Release :
+ 8000000 / 8000000
+ 8000000 / 8000000
+ 8000000 / 8000000
+ Trois lancements, trois totaux EXACTS : la version Release semble correcte,
+ c'est le piege le plus dangereux de la course.
+Pourquoi :
+ En Debug, compteur += 1 se compile en trois etapes reellement separees :
+ le fil lit la valeur en memoire, l'additionne dans un registre, la reecrit.
+ Deux fils qui font ces trois etapes en meme temps se volent leurs
+ increments : le second ecrase le premier, l'increment perdu est la perte
+ observee (5 a 6 millions d'increments perdus sur 8 millions). La course
+ depend du moment exact ou le systeme interrompt chaque fil, donc de la
+ charge, du nombre de coeurs et de la chance : dix executions, dix resultats.
+ En Release, le compilateur voit que la boucle ne lit jamais le compteur :
+ il le remonte dans un registre par fil et n'ecrit qu'a la fin. La course de
+ huit millions d'increments entrelaces devient huit ecritures finales
+ sequentielles : chaque fil ajoute son million une fois, les huit ajouts
+ finaux se sequencent, le total tombe juste. La course n'a pas disparu - le
+ compilateur l'a reduite a huit evenements rares. Le jour ou la boucle lira
+ le compteur (pour l'afficher, pour une condition d'arret), la course
+ reviendra en Release aussi. Raisonner sur le partage plutot que tester :
+ le code est faux dans les deux constructions, il ne se voit qu'en Debug.

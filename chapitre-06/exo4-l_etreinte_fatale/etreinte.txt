@@ -1,0 +1,31 @@
+Constat :
+ Le programme (version a ordres inverses) ne se fige que rarement sans les
+ attentes ; avec NkChrono::SleepMilliseconds(100) entre les deux prises, il
+ se fige A CHAQUE lancement : aucune sortie, aucun message, aucun rapport
+ d'erreur. Le processus reste vivant mais ne rend jamais la main ; il a fallu
+ l'arreter depuis la ligne de commande (l'equivalent du gestionnaire des
+ taches). Deux fils attendent l'un l'autre pour toujours.
+Pause :
+ Vu au debogueur (pause pendant le figeage) :
+ fil a : attend sur la ligne du second verrou de Fila, dans etreinte.cpp -
+ la construction de NkScopedLock<nkentseu::threading::NkMutex> second(m2),
+ ligne 50. Il tient m1 et attend m2, tenu par b.
+ fil b : attend sur la ligne du second verrou de Filb - la construction de
+ NkScopedLock<...> second(m1) (ligne 61 dans la version bloquante ; dans la
+ version corrigee rendue, b attend le meme ordre et ne se bloque pas). Il
+ tient m2 et attend m1, tenu par a.
+ Chacun tient son verrou et attend celui de l'autre : l'attente est circulaire.
+Correction :
+ Aucun verrou retire, aucune attente retiree. Un seul changement : le fil b
+ prend m1 AVANT m2, comme le fil a (ordre commun). Les deux attentes de
+ 100 ms sont gardee. Resultat : le premier fil qui prend m1 rend l'autre
+ incapable de progresser, mais il finit son travail et relache ; jamais les
+ deux ne tiennent un verrou que l'autre attend. Trois lancements, trois
+ fins propres.
+Regle :
+ TOUJOURS PRENDRE LES VERROUS DANS LE MEME ORDRE, partout dans le programme.
+ Des que deux sections verrouillent deux ressources, elles le font dans le
+ meme ordre mondial. C'est une regle d'equipe, pas un mecanisme : rien dans
+ le langage ne la verifie, et la violer ne se voit qu'au figeage - la seule
+ defense est la discipline d'ecriture (ici, un commentaire "meme ordre que a"
+ sur le second fil pour que l'invariant soit visible au lecteur).

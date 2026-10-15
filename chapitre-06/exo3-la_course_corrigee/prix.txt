@@ -1,0 +1,28 @@
+Sans protection : 8000000 (Release) — mediane 113.4 ms
+ (en Debug, la meme version donnait 1.97M a 2.89M sur 8M : la course. En
+ Release le compilateur remonte le compteur dans un registre par fil et
+ l'ecrit une fois a la fin, ce qui rend le total juste ICI — mais le code
+ reste faux, et une boucle qui lirait le compteur le rendrait faux partout.)
+Mutex : 8000000 (Release) — mediane 439.34 ms
+Atomique : 8000000 (Release) — mediane 432.23 ms
+Local : 8000000 (Release) — mediane 165.51 ms
+La moins chere : la version LOCALE. 165 ms pour 8 millions d'increments,
+ contre 432 ms pour l'atomique et 439 ms pour le mutex : deux fois et demie
+ moins. Et elle est correcte en Debug comme en Release, car elle n'a rien
+ de partage pendant l'ecriture : chaque fil tient son total, les additions
+ se font APRES les joins.
+Pourquoi :
+ Le mutex paie l'attente : chaque increment prend le verrou, et quand un
+ fil le tient, les sept autres attendent. Huit fils sur huit coeurs se
+ barricadent a tour de role : 440 ms.
+ L'atomique paie la coherence : FetchAdd rend la ligne de cache du compteur
+ exclusive au coeur qui l'execute. Les huit coeurs la se disputent a chaque
+ increment, elle voyage de cache en cache 8 millions de fois : 432 ms, au
+ meme prix que le mutex ici - une seule donnee tres disputee nivele les deux.
+ La version locale ne paie rien pendant le travail : chaque fil additionne
+ dans son propre registre, sans course, sans verrou, sans ligne de cache
+ disputee. Il ne paie que l'addition finale de huit nombres : 165 ms.
+ La lecon de l'enonce se verifie : la surete vient de la facon de partager
+ (ne pas partager), pas du nombre de verrous.
+ Mesures en Release, trois essais par version, mediane ; le total s'affiche
+ pour prouver que chaque version donne le compte attendu (8 x 1M).

@@ -1,0 +1,16 @@
+Serveur :
+[serveur] ecoute sur 7777, max 8 clients
+PAIR CONNECTE id=8019596095500772409
+MSG de id=8019596095500772409 : bonjour du client
+
+Client :
+[client] connexion demandee a 127.0.0.1:7777
+PAIR CONNECTE id=1
+[client] message envoye
+
+Pair :
+Du côté du client, l'identifiant reçu lors de l'appel du rappel onPeerConnected est id=1. Cet identifiant correspond par convention à NkPeerId::Server(), c'est-à-dire l'adresse logique réservée à l'hôte serveur dans le sous-système réseau de Nkentseu.
+Du côté du serveur, l'identifiant reçu dans onPeerConnected est id=8019596095500772409. Il s'agit d'un entier 64 bits non signé généré de manière unique par le gestionnaire de connexions (NkConnectionManager) pour identifier ce client spécifique pendant toute la durée de sa session, permettant d'acheminer et d'associer correctement les messages reçus via le champ msg.from.
+
+Machines :
+L'essai a été réalisé sur une seule machine locale sous Windows, en utilisant l'adresse de bouclage loopback 127.0.0.1 sur le port UDP 7777. Le serveur et le client se sont exécutés dans deux processus séparés.

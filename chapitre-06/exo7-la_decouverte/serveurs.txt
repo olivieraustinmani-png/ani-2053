@@ -1,0 +1,21 @@
+Liste :
+Serveur 1 : Serveur-Alpha - 127.0.0.1:49936 (joueurs: 1/8, ping: 1730 ms)
+Serveur 2 : Serveur-Beta - 127.0.0.1:49937 (joueurs: 1/8, ping: 1867 ms)
+Serveur 3 : Serveur-Alpha - 127.0.0.1:61547 (joueurs: 1/8, ping: 3732 ms)
+Serveur 4 : Serveur-Beta - 127.0.0.1:61548 (joueurs: 1/8, ping: 3870 ms)
+Serveur 5 : Serveur-Alpha - 127.0.0.1:49665 (joueurs: 1/8, ping: 5750 ms)
+Serveur 6 : Serveur-Beta - 127.0.0.1:49666 (joueurs: 1/8, ping: 5869 ms)
+
+Apparitions :
+Dans cette exécution d'écoute de 6 secondes, chaque serveur figure exactement 3 fois dans la liste :
+- Serveur-Alpha apparaît 3 fois avec les adresses 127.0.0.1:49936, 127.0.0.1:61547 et 127.0.0.1:49665.
+- Serveur-Beta apparaît 3 fois avec les adresses 127.0.0.1:49937, 127.0.0.1:61548 et 127.0.0.1:49666.
+
+Pourquoi :
+L'explication de ces apparitions multiples repose sur deux comportements précis dans NkLobby.cpp :
+1. Dans NkDiscovery::Broadcast (NkLobby.cpp, lignes 918-957) : à chaque appel de diffusion (toutes les 2 secondes), le serveur crée un socket temporaire local lié sur Any(0) via socket.Create(NkAddress::Any(0), NkSocket::Type::NK_UDP). Le socket émet son paquet UDP, puis est immédiatement fermé par socket.Close(). Par conséquent, le système d'exploitation attribue un nouveau port source éphémère différent à chaque diffusion (ici 49936, puis 61547, puis 49665 pour Alpha). En 6 secondes d'écoute, 3 paquets sont ainsi émis et reçus par serveur.
+2. Dans NkDiscovery::Listen (NkLobby.cpp, lignes 959-1030) : le client reçoit les paquets et renseigne l'adresse du serveur découvert à partir de l'adresse source reçue (server.addr = from, ligne 989). Lors du contrôle de déduplication (lignes 1007-1018), il compare existing.addr == server.addr. Or, l'opérateur d'égalité NkAddress::operator== (NkSocket.cpp, lignes 425-441) compare à la fois l'adresse IP et le numéro de port (mPort != other.mPort). Comme les ports sources éphémères changent à chaque broadcast, existing.addr == server.addr renvoie false. Chaque diffusion est donc considérée à tort comme un serveur distinct et ajoutée au vecteur out.
+Enfin, si maxPlayers vaut 0 (sa valeur par défaut), la condition de validation server.maxPlayers > 0 (ligne 1006) élimine le paquet sans aucun message.
+
+Machines :
+L'essai a été réalisé sur une seule machine locale sous Windows en exécutant trois processus concurrents (deux serveurs distincts nommes Serveur-Alpha et Serveur-Beta, et un processus client récepteur) communiquant sur le port de découverte 7778.

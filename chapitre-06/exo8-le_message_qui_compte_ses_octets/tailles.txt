@@ -1,0 +1,10 @@
+Types complets : 18 octets
+Quantifié : 8 octets
+Écart maximal :
+  enVie  : 0 (aucun ecart, booleen exact)
+  numero : 0 (aucun ecart, uint8 exact)
+  posX   : 0.004021 m (environ 4 mm)
+  posY   : 0.001175 m (environ 1.2 mm)
+  angle  : 0.199997 deg (environ 0.2 degre)
+  sante  : 0 (aucun ecart, entier borne exact)
+Ce que le joueur verrait : ces ecarts sont invisibles dans un jeu. Un decalage de 4 mm sur une position est bien en dessous d'un pixel a l'ecran, meme en vue rapprochee. Un ecart de 0.2 degre sur l'angle correspond a un deplacement angulaire imperceptible a l'oeil. La sante et l'etat en vie sont exacts. Le joueur ne verrait donc aucune difference entre les deux paquets, alors que le paquet quantifie occupe 8 octets au lieu de 18, soit une economie de 56 %.

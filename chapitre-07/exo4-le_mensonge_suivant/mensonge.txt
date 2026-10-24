@@ -1,0 +1,25 @@
+Le commentaire : include/NKCanvas/Renderer/Core/NkRenderer2DFactory.h, ligne 35, commentaire de la méthode IsApiSupported :
+
+    // Check if the given API has a 2D renderer implementation.
+    static bool IsApiSupported(NkGraphicsApi api);
+
+Le fichier range explicitement les cinq backends sous cette interface (ligne 14-15 : « NkIRenderer2D est l'interface abstraite implementee par les 5 backends (Software, OpenGL, Vulkan, DX11, DX12) »), et cette phrase-là est juste aujourd'hui. C'est la phrase de la ligne 35 qui ne l'est plus : elle définit ce que signifierait appeler la fonction — « cette API a-t-elle un rendu 2D ? » — et c'est exactement ce que le nom NkRenderer2DFactory promet aussi.
+
+Le code : include/NKCanvas/Backend/Metal/NkMetalRenderer2D.h, lignes 1-20, annonce un rendu 2D Metal livré : « NKCanvas avait un contexte Metal (NkMetalContext) mais aucun rendu 2D pour lui (« Metal 2D renderer not yet implemented ») : --backend=metal ouvrait la fenetre et s'arretait. Sur Mac, OpenGL est deprecie ; Metal est l'API native. » Le fichier se présente comme « rendu 2D de NKCanvas sur Metal (macOS / iOS) » et déclare « Meme architecture que les autres dorsaux : NkBatchRenderer2D accumule les sommets, celui-ci ne fait que les envoyer ». Mais NkRenderer2DFactory.cpp, dans sa fonction IsApiSupported, répond l'inverse :
+
+    #if defined(NKENTSEU_PLATFORM_MACOS) || defined(NKENTSEU_PLATFORM_IOS)
+                    case NkGraphicsApi::NK_GFX_API_METAL:
+                            return false; // not yet implemented
+    #endif
+
+et, dans Create(), pour la même API :
+
+                    // r2d = new NkMetalRenderer2D();
+                    NK_R2D_FACTORY_ERR("Metal 2D renderer not yet implemented");
+                    return nullptr;
+
+Le commentaire de NkRenderer2DFactory.h dit donc qu'on peut interroger la fabrique pour savoir si une API a un rendu 2D ; appelée avec Metal, cette interrogation répond non, alors que l'en-tête du backend Metal annonce un rendu 2D livré. L'affirmation du .h et le code qu'il décrit ne parlent pas du même état du monde.
+
+La preuve : deux lectures suffisent à refaire la vérification. D'abord le comportement du code, qui ne dépend d'aucune interprétation — IsApiSupported est un switch qui rend false sur NK_GFX_API_METAL, et Create rend nullptr sur la même valeur en journalisant « not yet implemented » ; en regard, NkContextFactory.cpp (Factory/NkContextFactory.cpp) construit bien un NkMetalContext pour cette API, donc le contexte existe et c'est le rendu 2D qui manque. Ensuite l'existence du corps annoncé : NkRenderer2DFactory.cpp inclut une déclaration avancée avec la ligne d'inclusion commentée (« // #include "NKCanvas/Backend/Metal/NkMetalRenderer2D.h" ») et l'appel de construction lui-même commenté (« // r2d = new NkMetalRenderer2D(); »), et une recherche des sources du module n'en trouve aucune en Objective-C++ : les seuls .mm de NKCanvas sont NkMetalContext.mm, NkMetalComputeContext.mm et NkOpenGLContextMacOS.mm, aucun NkMetalRenderer2D.mm. L'en-tête du backend est donc une promesse tenue à moitié : la classe est écrite et documentée, le fichier qui l'implémente n'existe pas, et la fabrique — qui, elle, est à jour — le dit.
+
+Ce qu'il dit de son auteur : l'auteur du commentaire de la ligne 35 a écrit une phrase juste au moment où il l'écrivait — quand Metal n'avait pas de rendu 2D, « IsApiSupported » voulait bien dire « a un rendu 2D ». Puis le backend Metal a été commencé (le 2026-09-30, date donnée dans l'en-tête de NkMetalRenderer2D.h) et la phrase n'a plus été relue : elle est restée dans le fichier de la fabrique, qui ne s'exécute pas, pendant que le seul endroit qui s'exécute — le switch — continuait de répondre non. Cela dit deux choses de l'endroit : d'abord que l'en-tête de NkMetalRenderer2D.h est un document de conception plus qu'une pièce livrée, et qu'il ne faut pas le lire comme un contrat ; ensuite qu'ici, le nom et le commentaire sont plus optimistes que le code, ce qui est l'inverse du cas habituel — c'est le code de la fabrique qui est le vrai document, et c'est lui qu'il faut croire quand on se demande pourquoi --backend=metal ne dessine rien sur un Mac.

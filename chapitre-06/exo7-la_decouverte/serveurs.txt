@@ -19,3 +19,4 @@ Enfin, si maxPlayers vaut 0 (sa valeur par défaut), la condition de validation 
 
 Machines :
 L'essai a été réalisé sur une seule machine locale sous Windows en exécutant trois processus concurrents (deux serveurs distincts nommes Serveur-Alpha et Serveur-Beta, et un processus client récepteur) communiquant sur le port de découverte 7778.
+

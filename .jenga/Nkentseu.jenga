@@ -1,0 +1,58 @@
+import os
+from Jenga import *
+from jengaconfig import *
+from Jenga.GlobalToolchains import RegisterJengaGlobalToolchains
+from Jenga.BuildSystem.TargetTypes import TargetTypes
+from Jenga.BuildSystem.Options import *
+
+grader = os_istrue(os.getenv("JENGA_GRADER"))
+
+registerbuildtarget_linux = TargetTypes["Executable"]
+registerbuildtarget_linux = TargetTypes["SharedLibrary"]
+registerbuildtarget_linux = TargetTypes["StaticLibrary"]
+
+
+with include(os.path.join(os.path.dirname(__file__), "Kernel/.../jenga.lua")) as files:
+    pass
+
+with include(os.path.join(os.path.dirname(__file__), "Engine/.../jenga.lua")) as files:
+    pass
+
+with include(os.path.join(os.path.dirname(__file__), "Applications/.../jenga.lua")) as files:
+    pass
+
+with include(os.path.join(os.path.dirname(__file__), "Tests/.../jenga.lua")) as files:
+    pass
+
+with include("Applications/Pworkspace/Reserve.jenga"):
+    pass
+
+with include("Applications/Pworkspace/Course.jenga"):
+    pass
+
+with include("Applications/Pworkspace/Corrige.jenga"):
+    pass
+
+with include("Applications/Pworkspace/Etreinte.jenga"):
+    pass
+
+with include("Applications/Pworkspace/Parle.jenga"):
+    pass
+
+with include("Applications/Pworkspace/Futur.jenga"):
+    pass
+
+with include("Applications/Pworkspace/CoquilleMain.jenga"):
+    pass
+
+with include("Applications/Pworkspace/Octets.jenga"):
+    pass
+
+with include("Applications/Pworkspace/Decouverte.jenga"):
+    pass
+
+with include("Applications/Pworkspace/Appelants.jenga"):
+    pass
+
+with include("Applications/Pworkspace/Sonde.jenga"):
+    pass

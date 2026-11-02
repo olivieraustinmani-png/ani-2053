@@ -14,3 +14,4 @@ Du côté du serveur, l'identifiant reçu dans onPeerConnected est id=8019596095
 
 Machines :
 L'essai a été réalisé sur une seule machine locale sous Windows, en utilisant l'adresse de bouclage loopback 127.0.0.1 sur le port UDP 7777. Le serveur et le client se sont exécutés dans deux processus séparés.
+

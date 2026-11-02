@@ -52,7 +52,7 @@ namespace {
 		return code; // absent de la table : son nom de quatre caractères
 	}
 
-	// ── Le lecteur : première piste vide du MP4. ──────────────────────────────
+	//  Le lecteur : première piste vide du MP4.
 	std::string VerdictLecteur(const std::vector<std::pair<std::string, std::string>> &pistes) {
 		for (const auto &p : pistes) {
 			if (p.first != "vide") continue;
@@ -111,10 +111,12 @@ int main() {
 			const std::string verdict = VerdictLecteur(pistes);
 			std::cout << nom << " LECTEUR " << verdict << "\n";
 			if (verdict == "LISIBLE") ++lisibles;
-			++mp4;
 		} else if (conteneur == "INCONNU") {
 			++inconnus;
+		} else {
+			++mp4; // non : voir ci-dessous
 		}
+		if (conteneur == "MP4") ++mp4;
 	}
 
 	std::cout << "MP4 " << mp4 << "\nLISIBLES " << lisibles << "\nINCONNUS " << inconnus << "\n";

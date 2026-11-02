@@ -1,0 +1,22 @@
+Virtuelles pures : 29 virtuelles pures, et 12 virtuelles qui ont un corps.
+Méthode : j'ai lu la classe NkIRenderer2D de sa déclaration (ligne 46) à sa fermeture (ligne 286), et classé chaque déclaration `virtual` selon ce qui termine sa signature : `= 0;` (pure), ou `{` (corps, même d'une seule ligne). Je les ai comptées à part, sans mélanger les deux tas. Second comptage, indépendant : une recherche de `= 0;` dans tout le fichier rend 30 lignes, dont une seule hors de la classe — la ligne 40, qui appartient à NkDrawable et non à l'interface. 30 − 1 = 29. Une recherche de `virtual` dans la classe rend 41 déclarations ; 41 − 29 = 12 avec un corps. Les deux comptes tombent d'accord. J'ai vérifié au passage qu'il n'y a qu'une seule définition de la classe dans le fichier (pas de bloc `#if` concurrent).
+
+Dorsaux : six dorsaux dans NKCanvas/Backend/, et six fichiers seulement (comptés par Get-ChildItem, pas d'après un commentaire). Tous héritent de la même classe mère, NkBatchRenderer2D, et non directement de NkIRenderer2D :
+- DirectX/NkDX11Renderer2D.h:25 — class NkDX11Renderer2D final : public NkBatchRenderer2D
+- DirectX/NkDX12Renderer2D.h:29 — class NkDX12Renderer2D final : public NkBatchRenderer2D
+- Metal/NkMetalRenderer2D.h:31 — class NkMetalRenderer2D final : public NkBatchRenderer2D
+- OpenGL/NkOpenGLRenderer2D.h:13 — class NkOpenGLRenderer2D final : public NkBatchRenderer2D
+- Software/NkSoftwareRenderer2D.h:11 — class NkSoftwareRenderer2D final : public NkBatchRenderer2D
+- Vulkan/NkVulkanRenderer2D.h:24 — class NkVulkanRenderer2D final : public NkBatchRenderer2D
+Six, et non cinq comme l'annonce le commentaire de NkRenderer2DFactory.h (qui cite Software, OpenGL, Vulkan, DX11, DX12 et oublie Metal) : ce commentaire date. Metal est bien présent dans le kit, même si la fabrique refuse encore de le construire.
+
+Ce que chacun écrit : classe mère NkBatchRenderer2D dans les six cas ; comptage des `override` par en-tête, destructeur et lignes de commentaire écartés.
+- NkDX11Renderer2D : 8 méthodes redéfinies.
+- NkDX12Renderer2D : 8 méthodes redéfinies.
+- NkMetalRenderer2D : 9 méthodes redéfinies.
+- NkOpenGLRenderer2D : 9 méthodes redéfinies.
+- NkSoftwareRenderer2D : 9 méthodes redéfinies.
+- NkVulkanRenderer2D : 14 méthodes redéfinies.
+Total : 57 redéfinitions pour 6 dorsaux.
+
+Le coût : un dorsal de plus ne coûte pas 29 méthodes (le compte des pures de l'interface), mais entre 8 et 14 — parce que NkBatchRenderer2D, la classe intermédiaire, tient le travail commun (accumulation des sommets, réglage de la vue, découpe, gestion des textures déjà batCHées) et laisse un noyau de méthodes propres à chaque API. Le dorsal le plus léger (DirectX 11 et 12, 8 méthodes) est aussi celui qui s'appuie le plus sur la classe mère ; le plus lourd (Vulkan, 14) parce que Vulkan n'a pas de contexte implicite et demande de piloter davantage. Le coût concret d'un septième dorsal serait donc : un fichier héritant de NkBatchRenderer2D, 8 à 14 `override`, et trois branchements hors du fichier (un cas dans NkRenderer2DFactory::Create, un dans IsApiSupported, et une valeur dans l'énumération NkGraphicsApi). C'est le compromis de la stratégie : l'interface coûte 29 à définir, la classe mère en absorbe une bonne part, et le prix d'une variante reste borné par ce que le socle n'a pas su faire pour elle.

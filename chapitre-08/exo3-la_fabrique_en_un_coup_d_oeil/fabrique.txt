@@ -1,0 +1,17 @@
+Recherche : commande PowerShell, lancée à la racine du kit Canvas du 22 octobre 2026 :
+    Get-ChildItem include -Recurse -Filter *.h | Select-String -Pattern 'NkOpenGLRenderer2D' | ForEach-Object { "$($_.Path):$($_.LineNumber): $($_.Line.Trim())" }
+Résultat : 12 occurrences dans 5 fichiers, dont un seul est le dorsal lui-même (NKCanvas/Backend/OpenGL/NkOpenGLRenderer2D.h, 4 occurrences : le commentaire d'en-tête, la classe, le constructeur, le destructeur). Hors de son dossier, il en reste 8, dans 4 fichiers.
+
+Hors de son dossier :
+- NKCanvas/Renderer/Core/NkIRenderer2D.h:15 — //   Backends/OpenGL/NkOpenGLRenderer2D — commentaire (bloc de documentation de l'interface qui liste les dorsaux ; ce n'est pas un appel, la ligne entière commence par « // »).
+- NKCanvas/Renderer/Core/NkRenderer2D.h:19 — //   NkSoftwareRenderer2D / NkOpenGLRenderer2D / NkVulkanRenderer2D / NkDX11Renderer2D / NkDX12Renderer2D — commentaire (la façade de rendu énumère les cinq dorsaux originels dans son commentaire d'en-tête, mais n'en nomme aucun dans du code).
+- NKCanvas/Renderer/Resources/NkTextureBackend.h:22 — // EXEMPLE D'ENREGISTREMENT (OpenGL, en fin de NkOpenGLRenderer2D::Initialize) — commentaire (titre d'un exemple d'usage).
+- NKCanvas/Renderer/Resources/NkTextureBackend.h:24 — //       &NkOpenGLRenderer2D::CreateGLTexture, — commentaire (exemple, la ligne d'appel est commentée).
+- NKCanvas/Renderer/Resources/NkTextureBackend.h:25 — //       &NkOpenGLRenderer2D::UpdateGLTexture, — commentaire.
+- NKCanvas/Renderer/Resources/NkTextureBackend.h:26 — //       &NkOpenGLRenderer2D::DeleteGLTexture, — commentaire.
+- NKCanvas/Renderer/Resources/NkTextureBackend.h:27 — //       &NkOpenGLRenderer2D::SetGLTextureFilter, — commentaire.
+- NKCanvas/Renderer/Resources/NkTextureBackend.h:28 — //       &NkOpenGLRenderer2D::SetGLTextureWrap, — commentaire.
+- NKGui/Core/NkGuiDrawListRaster.h:35 — //      OpenGL (`NkOpenGLRenderer2D::SetBlendMode`) : Screen ONE / — commentaire.
+Aucune de ces lignes n'est du code exécuté : dans les quatre fichiers, le nom du dorsal n'apparaît que derrière « // ». Le seul code qui le nomme est NKCanvas/Renderer/Core/NkRenderer2DFactory.cpp (le switch de Create, dans les .cpp de la bibliothèque, hors du kit d'en-têtes) — et cet en-tête-là, en tout cas, ne le nomme pas.
+
+Conclusion : la fabrique fait son travail dans les en-têtes. NkRenderer2DFactory.h ne nomme aucun dorsal : il ne déclare que `static NkIRenderer2D *Create(NkIGraphicsContext *ctx)`, `static void Destroy(...)` et `static NkUniquePtr<NkIRenderer2D> CreateUnique(...)` — des promesses sur l'interface, jamais sur une classe concrète. Aucun autre en-tête du kit ne se lie à NkOpenGLRenderer2D par du code : les 8 mentions trouvées hors de son dossier sont toutes des commentaires, y compris dans NkTextureBackend.h où l'enregistrement des fonctions de texture est donné en exemple commenté. Le choix du dorsal est donc bien gardé en un seul endroit (le .cpp de la fabrique, compilé dans la bibliothèque), et le nom de la classe concrète ne fuit pas dans les en-têtes. Un bémol, qui n'infirme pas la règle : l'énumération NkGraphicsApi (NK_GFX_API_OPENGL, …) circule partout, donc l'appelant peut nommer une famille de dorsal, mais pas sa classe.

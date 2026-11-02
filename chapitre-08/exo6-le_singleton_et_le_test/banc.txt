@@ -1,0 +1,20 @@
+Tester la version directe : la fonction telle qu'elle est écrite (DoitSauterDirect(bool auSol) { return auSol && nkentseu::NkInput.IsKeyDown(nkentseu::NkKey::NK_SPACE); }) ne se teste pas, et voici pourquoi cas par cas.
+- Cas « au sol + espace doit sauter » : il faudrait que NkInput rende true pour NK_SPACE au moment du test. Or NkInput est une instance inline globale (NkEventDispatcher.h:417), alimentée par la boucle d'événements de la fenêtre : hors d'un lancement graphique, elle n'a rien reçu et rend false. Le cas échoue sans que la règle soit fausse.
+- Cas « au sol, pas d'espace » : celui-ci passe, mais par hasard — le singleton rend false pour la même raison. Un test qui passe pour la mauvaise raison est pire qu'un échec.
+- Cas « en l'air + espace » et « en l'air, pas d'espace » : ils passent aussi, puisque le premier membre (auSol) décide seul.
+Ce qu'il faudrait pour tester réellement : pouvoir fournir un autre NkInput. Trois cheminements, tous plus chers que la règle elle-même. (1) Rendre l'état du clavier remplaçable : un pointeur d'interface dans NkInputQuery, réglé par les tests — mais alors le singleton n'est plus sans état, et l'on ajoute un point de rendez-vous modifiable de partout. (2) Abandonner le singleton au profit d'un objet passé en paramètre — c'est déjà la version testable. (3) Injecter un état factice dans le module de l'os (envoi d'événements clavier synthétiques à la fenêtre) : il faut alors une fenêtre, une boucle, et le test dépend de l'os. Coût : modifier le kit pour tester une règle de trois lignes, ou dépendre d'une fenêtre pour la tester. C'est le coût que l'on paie pour un objet accessible de partout.
+
+La version testable : DoitSauter(bool auSol, bool toucheEspace) — même règle (auSol && toucheEspace), mais tout ce qu'elle lit arrive en paramètre. Ce qui a changé : le singleton a disparu de la fonction, et l'appelant décide d'où vient la valeur (NkInput en jeu, un booléen littéral au test). La règle n'a pas bougé d'un caractère, et elle ne dépend plus d'aucune instance globale. C'est ce que le chapitre appelle la stratégie en C++ moderne : la façon de lire l'entrée devient un paramètre, pas une classe.
+
+Le banc : banc.cpp, lancé seul, sans fenêtre (OnCommandLine rend une valeur, donc OnInit n'est jamais appelé). Quatre cas testés avec la version testable, puis les quatre mêmes avec la version directe, tous écrits par le banc dans banc.txt :
+1 | testable | au sol + espace | attendu=true obtenu=true | OK
+2 | testable | au sol, pas d'espace | attendu=false obtenu=false | OK
+3 | testable | en l'air + espace | attendu=false obtenu=false | OK
+4 | testable | en l'air, pas d'espace | attendu=false obtenu=false | OK
+1 | direct | au sol + espace | attendu=true obtenu=false | ECHEC (singleton muet)
+2 | direct | au sol, pas d'espace | attendu=false obtenu=false | OK
+3 | direct | en l'air + espace | attendu=false obtenu=false | OK
+4 | direct | en l'air, pas d'espace | attendu=false obtenu=false | OK
+Code de sortie : 1 (un échec), en Debug comme en Release — même résultat, la règle ne dépend pas de l'optimisation, seulement de l'état du singleton.
+
+Sans fenêtre : la version directe a rendu false au premier cas, alors que la règle dit true : à ce moment, avant toute création de fenêtre, NkInput n'a pas d'état du clavier à lire — le singleton existe, mais il est vide. Elle n'a donc pas menti : elle a répondu ce que son état lui permettait, et le banc l'a montré au cas 1 et pas au cas 2, non parce que la règle est fausse, mais parce que les deux cas attendent le même false par deux chemins différents. C'est précisément pourquoi la version testable compte : sur les quatre cas, elle seule distingue « la règle est bonne » de « le singleton n'avait rien à dire ».

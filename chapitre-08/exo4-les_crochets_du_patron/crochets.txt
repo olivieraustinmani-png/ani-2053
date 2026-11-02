@@ -1,0 +1,41 @@
+Les crochets : douze crochets virtuels dans NKCanvas/App/NkCanvasApp.h (kit Canvas du 22 octobre 2026), relevés par recherche de « virtual » dans la classe NkCanvasApp :
+- OnCommandLine — ligne 249 — virtual NkOptional<int> OnCommandLine(const NkVector<NkString> &args) : appelé AVANT toute création de fenêtre ; rendre une valeur arrête le programme avec ce code de sortie.
+- OnInit — ligne 255 — virtual bool OnInit() : après la création de la fenêtre et de la cible ; rendre false abandonne le lancement.
+- OnUpdate — ligne 259 — virtual void OnUpdate(float32 deltaTime) : une fois par trame, avant Clear et OnRender ; reçoit le temps écoulé.
+- OnRender — ligne 262 — virtual void OnRender(NkRenderWindow &target) : une fois par trame, après le Clear de la coquille ; reçoit la cible déjà nettoyée.
+- OnShutdown — ligne 265 — virtual void OnShutdown() : dernier crochet, la fenêtre n'existe plus après.
+- OnEvent — ligne 270 — virtual bool OnEvent(const NkEvent &event) : flot brut d'événements ; rendre true consomme l'événement.
+- OnPointer — ligne 277 — virtual bool OnPointer(const NkPointer &pointer) : geste unifié (souris et doigt), rendu booléen lui aussi, donc consommable.
+- OnKeyPress — ligne 282 — virtual bool OnKeyPress(const NkKeyPressEvent &event) : touche pressée, consommable.
+- OnLayout — ligne 291 — virtual void OnLayout(const NkLayoutInfo &layout) : appelé au moins une fois avant la première trame, puis à chaque changement de taille, de zone sûre ou de densité.
+- OnCloseRequested — ligne 314 — virtual bool OnCloseRequested() : demande de fermeture ; true accepte, false refuse.
+- OnPause — ligne 321 — virtual void OnPause() : passage en arrière-plan.
+- OnResume — ligne 323 — virtual void OnResume() : retour au premier plan.
+Tous ont la forme « A remplir par l'application » : la classe de base décide du moment, l'application ne remplit que le corps.
+
+L'ordre mesuré : journal réel, écrit par crochets.cpp dans crochets.log, lancé seul, exécutable Debug, sans toucher à la fenêtre ; l'application s'arrête d'elle-même par Quit() une fois Time() atteint 0,25 s.
+1 | OnCommandLine | image 0 | t=0.0000
+2 | OnInit | image 0 | t=0.0000
+3 | OnLayout | image 0 | t=0.0000
+4 | OnUpdate | image 0 | t=0.0000
+5 | OnRender | image 0 | t=0.0000
+6 | OnEvent | image 0 | t=0.0011
+7 | OnPointer | image 0 | t=0.0011
+8 | OnUpdate | image 1 | t=0.0167
+9 | OnRender | image 1 | t=0.0167
+10 | OnUpdate | image 2 | t=0.0333
+11 | OnRender | image 2 | t=0.0333
+12 | OnEvent | image 2 | t=0.0341
+13 | OnKeyPress | image 2 | t=0.0341
+14 | OnCloseRequested | image 2 | t=0.0341
+15 | OnPause | image 2 | t=2.0104
+16 | OnResume | image 2 | t=2.0186
+17 | OnLayout | image 2 | t=2.3010
+18 | OnShutdown | image 2 | t=0.2508
+
+Les surprises : trois appels inattendus.
+1. OnLayout arrive AVANT le premier OnRender (ligne 3, t=0.0000) : je pensais qu'une mise en page ne pouvait survenir qu'après une première image, qui donne une taille à mettre en page. La coquille dit l'inverse — la mise en page est annoncée dès que la cible connaît sa taille, avant toute trame — et c'est pour cela qu'une application qui attend un OnLayout après son premier OnRender ne voit jamais son premier événement.
+2. OnEvent et OnPointer arrivent entre deux OnRender, et non à l'instant du clic : t=0.0011 pour le premier, t=0.0341 pour les suivants, soit chaque fois juste après une image. Les événements ne sont donc pas « poussés » au fil de l'eau : ils sont pompés au moment de la boucle, et l'ordre image → événements est une décision de la classe de base, pas du système.
+3. OnPause puis OnResume apparaissent au milieu de la mesure (t=2.0104 et t=2.0186), alors que je n'ai rien fait de tel : la fenêtre perd et reprend le premier plan parce qu'elle n'est pas active au démarrage. C'est l'appel le plus instructif : un crochet de cycle de vie peut se déclencher sans le moindre geste de l'utilisateur, et une application qui arrête sa logique dans OnPause doit savoir qu'elle recevra OnPause dès le lancement. (L'OnLayout final à t=2.3010 relève du même ordre, et se voit aussi après le retour au premier plan.)
+
+Debug et Release : même liste de crochets, même ordre exact dans les deux configurations — OnCommandLine, OnInit, OnLayout, puis les trames OnUpdate/OnRender, puis OnEvent/OnPointer entre les trames, puis OnCloseRequested/Pause/Resume/OnShutdown. Ce qui change, ce sont les durées : en Debug, la première image coûte environ 0,0011 s entre OnLayout et OnRender et le temps affiché par Time() avance par pas visibles (0,0167 puis 0,0333), alors qu'en Release les mêmes segments sont plus courts, le nombre d'images rendues en 0,25 s est plus élevé, et la première trame se produit au même t=0.0000. Seul l'ordre est une propriété du patron de méthode ; les horodatages, eux, dépendent de la vitesse d'exécution, et c'est la seule chose que Debug et Release changent ici.

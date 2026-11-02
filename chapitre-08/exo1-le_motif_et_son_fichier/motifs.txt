@@ -1,0 +1,33 @@
+Stratégie : NKCanvas/Renderer/Core/NkIRenderer2D.h:46 (code)
+    class NkIRenderer2D {
+Plusieurs façons de dessiner une même chose, choisie à l'exécution : l'interface ne promet que des méthodes pures, chaque dorsal en donne sa version, et le code client ne sait pas laquelle il tient (la virtualité apparaît dès la première méthode pure de la classe).
+
+Fabrique : NKCanvas/Renderer/Core/NkRenderer2DFactory.h:36 (code)
+    static NkIRenderer2D *Create(NkIGraphicsContext *ctx);
+Créer un dorsal sans nommer sa classe concrète. Toute la fabrique tient en quatre lignes : la classe :29, Create :36, Destroy :41 et CreateUnique :44 — la fabrique s'occupe aussi de la destruction (ce qui, ici, n'est pas dans le nom du motif).
+
+Façade : NKCanvas/Renderer/Targets/NkRenderTarget.h:64 (code)
+    virtual void Draw(const NkVertex *vertices, uint32 count, NkPrimitiveType primitive, const NkRenderStates &states = NkRenderStates::Default()) = 0;
+Un besoin simple devant un sous-système compliqué : trois appels (Clear, Draw, Display) suffisent pour dessiner, alors que la cible cache un contexte, une fabrique, un renderer, un lot de sommets et une projection. La ligne citée est le cœur de la façade ; les laissez-passer Clear et Display sont dans la même classe.
+
+Patron de méthode : NKCanvas/App/NkCanvasApp.h:262 (code)
+    virtual void OnRender(NkRenderWindow &target) {
+Le squelette fixe est la boucle de la classe de base (OnUpdate, Clear, OnRender, Display) ; ce que j'écris ne décide ni de l'ordre ni du moment. L'en-tête le dit à la ligne 242, « A remplir par l'application ».
+
+Observateur : NKEvent/NkEventDispatcher.h:121 (code)
+    template <typename T> bool Dispatch(NkEventHandler<T> handler) {
+Quelque chose arrive, plusieurs abonnés veulent le savoir, et l'annonceur ne les connaît pas : les abonnés sont des fonctions anonymes (NkFunction<bool(T&)>, ligne 79) et non une classe abstraite. La valeur de retour dit si l'événement est consommé : ligne 132, if (consumed) { … MarkHandled() }, puis ligne 135.
+
+Singleton : NKEvent/NkEventDispatcher.h:417 (code)
+    inline NkInputQuery NkInput;
+Un seul objet accessible de partout. Instance globale, mais sans état : NkInputQuery n'est qu'une porte d'interrogation (bool IsKeyDown(NkKey key) const noexcept;, ligne 273), pas une copie de l'état du clavier. C'est ce qui rend ce singleton défendable ; le commentaire de la ligne 407 le dit aussi (« Instance globale stateless »).
+
+Adaptateur : NKCanvas/UI/NkGuiCanvasBackend.h:26 (code)
+    class NkGuiCanvasBackend {
+Deux interfaces qui ne se correspondent pas : NKGui produit des listes de dessin (NkGuiDrawList), NKCanvas attend des appels à NkIRenderer2D. La traduction se fait dans void Submit(const nkentseu::nkgui::NkGuiDrawList &dl, uint32 fbW, uint32 fbH), ligne 213. Conséquence : NKGui ne connaît pas NKCanvas.
+
+Composite : NKCanvas/Renderer/Core/NkDrawable.h:24 — attention, c'est un commentaire, pas du code exécuté
+    //       local.transform *= GetTransform();   // applique notre transform
+L'appel réel de composition (traiter un objet et son groupe de la même façon, en passant l'état de parent en enfant) est dans le corps de NkSprite::Draw et de NkShape::Draw, qui ne sont pas dans les en-têtes du kit : ils sont dans la bibliothèque compilée. L'en-tête de NkDrawable ne donne donc le motif qu'en exemple commenté, à la ligne 24 (et l'envoi des sommets à la ligne 26). Je le signale comme tel.
+
+Commande : elle manque du kit. Aucun en-tête de include/ ne déclare de classe Commande (pas de *Command, pas d'interface Execute/Undo) : une recherche du nom dans tout include/ ne rend que des commentaires de la documentation de l'Observateur. Ce qui s'en approche le plus est l'événement typé (NKEvent/NkEvent.h) : une action déjà représentée comme un objet, qu'on garde et transmettant, mais qui ne s'exécute pas et ne se défait pas — il manque donc les deux opérations qui définissent le motif.

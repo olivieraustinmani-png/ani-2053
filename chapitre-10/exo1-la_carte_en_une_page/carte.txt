@@ -1,0 +1,5 @@
+fichier : NkRefView.h, lignes : 86, inclut : -
+fichier : NkRefBoard.h, lignes : 371, inclut : NkRefView.h
+fichier : NkRefFile.h, lignes : 224, inclut : NkRefBoard.h NkRefView.h
+fichier : main.cpp, lignes : 1977, inclut : NkRefView.h NkRefBoard.h NkRefFile.h
+commit : 987304dae

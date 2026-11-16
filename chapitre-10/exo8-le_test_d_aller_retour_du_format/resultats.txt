@@ -1,0 +1,30 @@
+Format juste :
+NON MESURE — le test n'a pas pu être construit ni exécuté sur cette machine.
+
+Ce qui a été fait, et où cela s'arrête, sans rien avancer :
+- test_format.cpp compile (clang++ -std=c++17 -Wall, aucune erreur de syntaxe, avec
+  -I sur Applications/NkRef/src, sur Build/Kit/NkentseuKit/include et sur les
+  sources du coeur). L'édition de liens, elle, échoue.
+- Cause constatée : les archives du kit (Build/Kit/NkentseuKit/lib/Debug-Windows/*.lib)
+  ont été produites avec MSVC, alors que le seul compilateur disponible ici est
+  clang++ de MSYS2/ucrt64. Leur édition de liens ensemble échoue sur des symboles
+  du coeur (NkString, NkGetDefaultAllocator, NkStringUtils::NkSnprintf, NkAssert)
+  que les archives exportent pour MSVC mais que l'éditeur de liens de mingw ne
+  rapproche pas. Aucun cl.exe n'est présent sur la machine (Visual Studio 18 est
+  installé sans ses outils C++), donc la voie MSVC n'est pas ouverte non plus.
+- Conséquence honnête : aucune ligne « octets : N, relu : OUI, identiques : OUI »
+  ne peut être recopiée ici. Je n'en écris donc aucune. Le programme est fourni,
+  la commande qui le construira sur une machine outillée aussi.
+
+Commande qui produira la mesure, une fois un compilateur MSVC disponible :
+  cl /std:c++17 /W4 /I<depot>/Applications/NkRef/src ^
+     /I<depot>/Build/Kit/NkentseuKit/include ^
+     test_format.cpp ^
+     /link /LIBPATH:<depot>/Build/Kit/NkentseuKit/lib/Debug-Windows ^
+     NKCore.lib NKContainers.lib NKMemory.lib NKPlatform.lib NKLogger.lib
+  test_format.exe
+
+Format casse :
+NON MESURE — même raison. La copie à casser est copie/NkRef/NkRefFile.h,
+placée avant les autres chemins d'inclusion (-Icopie), et la ligne à changer
+est décrite dans reponse.txt.
